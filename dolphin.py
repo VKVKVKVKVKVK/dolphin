@@ -50,7 +50,7 @@ def get_assets(URL, endpointApi, date=None, full_response=True, columns=list()):
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + "?columns=ASSET_DATABASE_ID" + "&columns=LABEL" \
            + "&columns=TYPE" + "&columns=LAST_CLOSE_VALUE_IN_CURR" + "&date=2013-06-14"
-    print(path)
+    #print(path)
     res = requests.get(path,
                        params=payload,
                        auth=AUTH,
@@ -110,7 +110,7 @@ def post_ratio(ratio, assets, URL, endpointApi, date=None, full_response=False, 
 #Call Get All Assets
 res_assets = get_assets(URL,"/asset")
 assets = json.loads(res_assets.content.decode('utf-8'))
-print(len(assets))
+print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 #for i in e:
 #    print(i)
 
@@ -124,7 +124,11 @@ for i in assetsids:
 #ratios = for r in ratios:
  #   r
 sortedratios = sorted(ratios.items(), key=lambda kv: kv[1], reverse=True)
-print(sortedratios[0:30])
+sortedratios = sortedratios[0:30]
+
+print("\n".join(str(v) for v in sortedratios))
+
+#print(sortedratios[0:30])
 
 
 """ 
