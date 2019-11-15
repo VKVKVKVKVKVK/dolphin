@@ -92,30 +92,39 @@ def get_portfolio(URL, endpointApi, portfolio_id, date=None, full_response=False
                        verify=False)
     return res
 
-def post_ratio(URL, endpointApi, date=None, full_response=False, columns=list()):
+#sharpe: 12
+def post_ratio(ratio, assets, URL, endpointApi, date=None, full_response=False, columns=list()):
     payload = {'date': date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns)
     params = {
-        'ratio': [10],
-        'asset': [1875]
+        'ratio': ratio,
+        'asset': assets,
+        'start_date': '2013-06-14',
+        'end_date': '2019-04-19'
     }
-    res = requests.post(path,data=params,auth=AUTH,verify=False)
+    res = requests.post(path,data=json.dumps(params),auth=AUTH,verify=False)
     return res
 
 
 
 #Call Get All Assets
-assets = get_assets(URL,"/asset")
-e = json.loads(assets.content.decode('utf-8'))
-print(len(e))
-for i in e:
-    print(i)
+res_assets = get_assets(URL,"/asset")
+assets = json.loads(res_assets.content.decode('utf-8'))
+print(len(assets))
+#for i in e:
+#    print(i)
 
-
-ratio = post_ratio(URL, "/ratio/invoke")
+assetsids = [o['ASSET_DATABASE_ID']['value'] for o in assets]
+res_ratios = post_ratio([12], assetsids, URL, "/ratio/invoke")
 #temp = json.loads(ratio.content.decode('utf-8'))
 #print(temp)
-print(ratio.text)
+ratios = json.loads(res_ratios.content.decode('utf-8'))
+for i in assetsids:
+    ratios[i] = ratios[i]['12']['value']
+#ratios = for r in ratios:
+ #   r
+sortedratios = sorted(ratios.items(), key=lambda kv: kv[1], reverse=True)
+print(sortedratios[0:30])
 
 
 """ 
