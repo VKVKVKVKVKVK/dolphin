@@ -3,7 +3,7 @@ import os
 import json
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
+from collections import namedtuple
 
 #Contraintes du portefeuille:
 # - 15 actifs distincts minimum & 40 maximum
@@ -26,6 +26,13 @@ AUTH =('EPITA_GROUPE16', 'n3ky4D6cwmVe5Zax')
 
 def columns_to_str(columns):
     return "/".join(columns)
+
+def _json_object_hook(d):
+    return namedtuple('X', d.keys())(*d.values())
+
+def json2obj(data):
+    return json.loads(data, object_hook=_json_object_hook)
+
 
 #Récupère infos sur un asset en particulier (id passé en paramètre)
 def get_asset_by_id(URL, endpointApi, date=None, full_response=False, columns=list()):
@@ -85,13 +92,16 @@ def get_portfolio(URL, endpointApi, portfolio_id, date=None, full_response=False
                        verify=False)
     return res
 
+def post_ratio(URL, endpointApi, date=None, full_response=False, columns=list()):
+    payload = {'date': date, 'fullResponse': full_response}
+    path = URL + endpointApi + columns_to_str(columns)
+    params = {
+        'ratio': [10],
+        'asset': [1875]
+    }
+    res = requests.post(path,data=params,auth=AUTH,verify=False)
+    return res
 
-
-#Call Get Asset by Id
-asset = get_asset_by_id(URL,"/asset/1875")
-d = json.loads(asset.content.decode('utf-8'))
-for key, value in d.items():
-    print(key, value)
 
 
 #Call Get All Assets
@@ -101,6 +111,20 @@ print(len(e))
 for i in e:
     print(i)
 
+
+ratio = post_ratio(URL, "/ratio/invoke")
+#temp = json.loads(ratio.content.decode('utf-8'))
+#print(temp)
+print(ratio.text)
+
+
+""" 
+#Call Get Asset by Id
+asset = get_asset_by_id(URL,"/asset/1875")
+d = json.loads(asset.content.decode('utf-8'))
+for key, value in d.items():
+    print(key, value)
+print(d["LABEL"]["value"])
 
 #Call Get Asset Quotation by Id
 asset_quote = get_asset_quotation_by_id(URL,"/asset/1875/quote")
@@ -120,3 +144,13 @@ p = json.loads(portfolio.content.decode('utf-8'))
 for i in p:
     print(i)
 
+#Nombre d'actifs dans portefeuille (initialisé à 0)
+asset_number = 0
+
+data = '{"name": "John Smith", "hometown": {"name": "New York", "id": 123}}'
+
+y = json2obj(data)
+
+print(y.name, y.hometown.name, y.hometown.id)
+
+"""
