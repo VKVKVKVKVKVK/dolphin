@@ -13,6 +13,9 @@ from collections import namedtuple
 # - Evaluation du sharpe du 14/06/2013 au 18/04/2019 (Modification du sujet, cf. mail)
 # - 10/20 attribué automatiquement si ratio de sharpe supérieur strictement au portefeuille naif
 
+#FIXME: change hardcoded dates partout
+STARTDATE = "2013-06-14"
+ENDDATE = "2019-04-19"
 
 
 #INFORMATIONS DE LOG AU SERVEUR
@@ -23,6 +26,12 @@ AUTH =('EPITA_GROUPE16', 'n3ky4D6cwmVe5Zax')
 
 #https: // dolphin.jump - technology.com: 8443 / api / v1 / asset / 1792
 
+
+#portefeuilleyolo:
+defpf = [2201, 2142 ,2143 , 2132, 2188, 2112, 1990, 2064, 2144, 2187, 1968, 2191, 2147, 1897, 1877]
+#1-9: 10%
+#10-15: 10/6
+THUNES = 100000 #FIXME
 
 def columns_to_str(columns):
     return "/".join(columns)
@@ -71,7 +80,6 @@ def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()
                        verify=False)
     return res
 
-
 #Récupère les ratios existants
 def get_ratios(date=None, full_response=False, columns=list()):
     endpointApi = "/ratio/"
@@ -92,6 +100,38 @@ def get_portfolio(portfolio_id, date=None, full_response=False, columns=list()):
     path = URL + endpointApi + columns_to_str(columns) + str(portfolio_id) + "/dyn_amount_compo"
     print(path)
     res = requests.get(path,
+                       params=payload,
+                       auth=AUTH,
+                       verify=False)
+    return res
+
+#Set la  composition d'un portefeuille
+def set_portfolio(portfolio_id, assets, date=None, full_response=False, columns=list()):
+    endpointApi = "/portfolio/"
+    payload = {'date':date, 'fullResponse': full_response}
+    path = URL + endpointApi + columns_to_str(columns) + str(portfolio_id) + "/dyn_amount_compo"
+    print(path)
+    params = {
+        'label' : 'EPITA_PTF_16',
+        'currency' : {
+            "code": "€"
+        },
+        'type' : 'front',
+        'values' : {
+            STARTDATE : []
+        }
+    }
+    for i in assets:
+        params['values'][STARTDATE].append(
+            {
+                "asset": {
+                    "asset": i['id'],
+                    "quantity": i['quantity']
+                }
+            }
+        )
+    res = requests.put(path,
+                       data=json.dumps(params),
                        params=payload,
                        auth=AUTH,
                        verify=False)
@@ -130,7 +170,40 @@ for i in assetsids:
 sortedratios = sorted(ratios.items(), key=lambda kv: kv[1], reverse=True)
 sortedratios = sortedratios[0:40]
 
-print("\n".join(str(v) for v in sortedratios))
+print("\n".join(str(v[0]) for v in sortedratios))
+
+ref = get_portfolio(2201)
+refjson = json.loads(ref.content.decode('utf-8'))
+#print(refjson)
+print(json.dumps(refjson, indent=4, sort_keys=True))
+
+assets = []
+assetsvalues = [] #FIXME: les récupérer
+c = 0
+for i in defpf:
+    #bob le bricoleur
+    val = THUNES * 10/100 if c < 9 else THUNES * (10 / 6) / 100
+    qu = val #FIXME: virer ça
+    #qu = val / assetsvalues[c] #FIXME: décommenter ça
+    assets.append(
+        {
+            'id' : i,
+            'quantity' : qu
+        }
+    )
+    c += 1
+
+res = set_portfolio(1835, assets)
+print(json.loads(res.content.decode('utf-8')))
+#samarchpa: error 500 sans message d'erreur :D
+
+#bruteforce les ids ma bite
+#for id in range(1000):
+#    print("id: " + str(id))
+#    ref = get_portfolio(id)
+#    print(json.loads(ref.content.decode('utf-8')))
+#    if(ref.ok):
+#        tmp = raw_input("nice");
 
 #print(sortedratios[0:30])
 
