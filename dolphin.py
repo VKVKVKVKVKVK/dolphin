@@ -97,6 +97,14 @@ def get_portfolio(portfolio_id, date=None, full_response=False, columns=list()):
                        verify=False)
     return res
 
+def get_start_portfolio(assets):
+    start = []
+    for i in assets:
+        if i['TYPE']['value'] == 'PORTFOLIO':
+            start.append(i)
+    return start
+
+
 #sharpe: 12
 def post_ratio(ratio, assets, date=None, full_response=False, columns=list()):
     endpointApi = "/ratio/invoke/"
@@ -111,12 +119,25 @@ def post_ratio(ratio, assets, date=None, full_response=False, columns=list()):
     res = requests.post(path,data=json.dumps(params),auth=AUTH,verify=False)
     return res
 
+
+
 #Call Get All Assets
+print("Fetching all assets in database...")
 res_assets = get_assets()
 assets = json.loads(res_assets.content.decode('utf-8'))
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
-#for i in e:
-#    print(i)
+
+#Getting our portfolios
+print("Getting our portfolios...")
+main_portfolios = get_start_portfolio(assets)
+for i in main_portfolios:
+    print("ID : " + i['ASSET_DATABASE_ID']['value'] + ", Label : " + i['LABEL']['value'])
+print('\n')
+
+#Variables for Epita and Reference portfolios
+epita = main_portfolios[0]
+ref = main_portfolios[1]
+
 
 assetsids = [o['ASSET_DATABASE_ID']['value'] for o in assets]
 res_ratios = post_ratio([12], assetsids)
