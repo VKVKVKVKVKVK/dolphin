@@ -35,7 +35,8 @@ def json2obj(data):
 
 
 #Récupère infos sur un asset en particulier (id passé en paramètre)
-def get_asset_by_id(URL, endpointApi, date=None, full_response=False, columns=list()):
+def get_asset_by_id(id, date=None, full_response=False, columns=list()):
+    endpointApi = "/asset/" + str(id)
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns)
     print(path)
@@ -46,7 +47,8 @@ def get_asset_by_id(URL, endpointApi, date=None, full_response=False, columns=li
     return res
 
 #Récupère liste de tout les assets avec ID, Label, Type et Cotation à la date spécifiée (harcodée 2013-06-14 ici)
-def get_assets(URL, endpointApi, date=None, full_response=True, columns=list()):
+def get_assets(date=None, full_response=True, columns=list()):
+    endpointApi = "/asset"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + "?columns=ASSET_DATABASE_ID" + "&columns=LABEL" \
            + "&columns=TYPE" + "&columns=LAST_CLOSE_VALUE_IN_CURR" + "&date=2013-06-14"
@@ -58,7 +60,8 @@ def get_assets(URL, endpointApi, date=None, full_response=True, columns=list()):
     return res
 
 #Récupère cotation sur un asset en particulier (id passé en paramètre) pour dates hardcodées FIXME CHECK LA DATE
-def get_asset_quotation_by_id(URL, endpointApi, date=None, full_response=False, columns=list()):
+def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()):
+    endpointApi = "/asset/" + str(id) + "/quote"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + "?start_date=2013-06-14&end_date=2019-04-19"
     print(path)
@@ -70,7 +73,8 @@ def get_asset_quotation_by_id(URL, endpointApi, date=None, full_response=False, 
 
 
 #Récupère les ratios existants
-def get_ratios(URL, endpointApi, date=None, full_response=False, columns=list()):
+def get_ratios(date=None, full_response=False, columns=list()):
+    endpointApi = "/ratio/"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns)
     print(path)
@@ -82,7 +86,8 @@ def get_ratios(URL, endpointApi, date=None, full_response=False, columns=list())
 
 
 #Récupère la  composition d'un portefeuille
-def get_portfolio(URL, endpointApi, portfolio_id, date=None, full_response=False, columns=list()):
+def get_portfolio(portfolio_id, date=None, full_response=False, columns=list()):
+    endpointApi = "/portfolio/"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + str(portfolio_id) + "/dyn_amount_compo"
     print(path)
@@ -93,7 +98,8 @@ def get_portfolio(URL, endpointApi, portfolio_id, date=None, full_response=False
     return res
 
 #sharpe: 12
-def post_ratio(ratio, assets, URL, endpointApi, date=None, full_response=False, columns=list()):
+def post_ratio(ratio, assets, date=None, full_response=False, columns=list()):
+    endpointApi = "/ratio/invoke/"
     payload = {'date': date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns)
     params = {
@@ -105,17 +111,15 @@ def post_ratio(ratio, assets, URL, endpointApi, date=None, full_response=False, 
     res = requests.post(path,data=json.dumps(params),auth=AUTH,verify=False)
     return res
 
-
-
 #Call Get All Assets
-res_assets = get_assets(URL,"/asset")
+res_assets = get_assets()
 assets = json.loads(res_assets.content.decode('utf-8'))
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 #for i in e:
 #    print(i)
 
 assetsids = [o['ASSET_DATABASE_ID']['value'] for o in assets]
-res_ratios = post_ratio([12], assetsids, URL, "/ratio/invoke")
+res_ratios = post_ratio([12], assetsids)
 #temp = json.loads(ratio.content.decode('utf-8'))
 #print(temp)
 ratios = json.loads(res_ratios.content.decode('utf-8'))
@@ -124,7 +128,7 @@ for i in assetsids:
 #ratios = for r in ratios:
  #   r
 sortedratios = sorted(ratios.items(), key=lambda kv: kv[1], reverse=True)
-sortedratios = sortedratios[0:30]
+sortedratios = sortedratios[0:40]
 
 print("\n".join(str(v) for v in sortedratios))
 
