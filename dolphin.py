@@ -200,23 +200,59 @@ refjson = json.loads(ref.content.decode('utf-8'))
 #print(refjson)
 print(json.dumps(refjson, indent=4, sort_keys=True))
 
+def convert(iin, out, value):
+    return value
+
+class assetinfo:
+    def __init__(self, id = -1, cotation = -1, nb = -1, currency = "EUR"):
+        self.id = id
+        self.cotation = convert(currency, "EUR", cotation)
+        self.nb = nb
+
+
+def buildnaifpf(assets, assetsratios):
+    res = []
+    missing = 0 #FIXME: adjust with remaining THUNES?
+    i = 0
+    for a in assets :
+        val = THUNES * assetsratios[i] + missing
+        if val > THUNES / 10:
+            print("ERROR: > 10% for id: " + str(assets[i].id) + ", adjusting...\n")
+            missing = val - THUNES / 10
+            val = THUNES / 10
+        wqu = val / assets[i].cotation
+        diff = wqu - assets[i].nb
+        if diff > 0:
+            print("ERROR: not enough assets for id: " + str(assets[i].id) + ", adjusting...\n")
+            missing += diff * assets[i].cotation
+            qu = assets[i].nb
+        else:
+            qu = wqu
+        diffint = qu - int(qu)
+        if diffint != 0:
+            print("WARNING: quantity is not an integer for id: " + str(assets[i].id) + ", adjusting...") 
+            missing += diffint * assets[i].cotation
+        res.append(
+            {
+                'id' : a.id,
+                'quantity' : qu
+            }
+        )
+        i += 1
+    return res
+
 assets = []
 assetsvalues = [] #FIXME: les récupérer
-c = 0
-for i in defpf:
-    #bob le bricoleur
-    val = THUNES * 10/100 if c < 9 else THUNES * (10 / 6) / 100
-    qu = val #FIXME: virer ça
-    #qu = val / assetsvalues[c] #FIXME: décommenter ça
-    assets.append(
-        {
-            'id' : i,
-            'quantity' : qu
-        }
-    )
-    c += 1
-
-res = set_portfolio(1835, assets)
+assetsnb = [] #FIXME: les récupérer
+assetsratios = []
+for i  in range(15):
+    assets.append(assetinfo(defpf[i], 1, 100000, 'EUR'))
+for i in range(9):    
+    assetsratios.append(0.1)
+for i in range(6):
+    assetsratios.append(0.1/6)
+pf = buildnaifpf(assets, assetsratios)
+res = set_portfolio(1835, pf)
 print(res.status_code) #OK
 
 #Veryfing out updated portfolio
