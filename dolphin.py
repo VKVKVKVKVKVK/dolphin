@@ -48,7 +48,7 @@ def get_asset_by_id(id, date=None, full_response=False, columns=list()):
     endpointApi = "/asset/" + str(id)
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns)
-    print(path)
+    #print(path)
     res = requests.get(path,
                        params=payload,
                        auth=AUTH,
@@ -73,7 +73,7 @@ def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()
     endpointApi = "/asset/" + str(id) + "/quote"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + "?start_date=2013-06-14&end_date=2019-04-19"
-    print(path)
+    #print(path)
     res = requests.get(path,
                        params=payload,
                        auth=AUTH,
@@ -85,20 +85,26 @@ def get_ratios(date=None, full_response=False, columns=list()):
     endpointApi = "/ratio/"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns)
-    print(path)
+    #print(path)
     res = requests.get(path,
                        params=payload,
                        auth=AUTH,
                        verify=False)
     return res
 
+def get_start_portfolio(assets):
+    start = []
+    for i in assets:
+        if i['TYPE']['value'] == 'PORTFOLIO':
+            start.append(i)
+    return start
 
 #Récupère la  composition d'un portefeuille
 def get_portfolio(portfolio_id, date=None, full_response=False, columns=list()):
     endpointApi = "/portfolio/"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + str(portfolio_id) + "/dyn_amount_compo"
-    print(path)
+    #print(path)
     res = requests.get(path,
                        params=payload,
                        auth=AUTH,
@@ -114,7 +120,7 @@ def set_portfolio(portfolio_id, assets, date=None, full_response=False, columns=
     params = {
         'label' : 'EPITA_PTF_16',
         'currency' : {
-            "code": "€"
+            "code": "EUR" #FIXME maybe switch to EUR/€ ?
         },
         'type' : 'front',
         'values' : {
@@ -183,8 +189,12 @@ for i in assetsids:
 sortedratios = sorted(ratios.items(), key=lambda kv: kv[1], reverse=True)
 sortedratios = sortedratios[0:40]
 
+print("ID's with best Sharpe ratio: ")
 print("\n".join(str(v[0]) for v in sortedratios))
 
+
+#Printing REF portfolio ...
+print("Printing ref Portfolio...")
 ref = get_portfolio(2201)
 refjson = json.loads(ref.content.decode('utf-8'))
 #print(refjson)
@@ -207,7 +217,17 @@ for i in defpf:
     c += 1
 
 res = set_portfolio(1835, assets)
-print(json.loads(res.content.decode('utf-8')))
+print(res.status_code) #OK
+
+#Veryfing out updated portfolio
+print("Printing our updated portfolio...")
+ref = get_portfolio(1835)
+refjson = json.loads(ref.content.decode('utf-8'))
+print(json.dumps(refjson, indent=4, sort_keys=True))
+#FIXME volumes peuvent pas etre en float
+
+#print(json.loads(res.content.decode('utf-8')))
+
 #samarchpa: error 500 sans message d'erreur :D
 
 #bruteforce les ids ma bite
