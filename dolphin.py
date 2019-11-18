@@ -4,6 +4,8 @@ import json
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from collections import namedtuple
+from AssetInfo import AssetInfo
+import pandas as pd
 
 #Contraintes du portefeuille:
 # - 15 actifs distincts minimum & 40 maximum
@@ -42,38 +44,6 @@ def convert(iin, out, value):
     return value * currencyvalues[iin] / currencyvalues[out]
 
 print(convert("EUR", "TEST", 2))
-print("coucou")
-
-class AssetInfo:
-    def __init__(self, id = -1, quotation = -1, volume = -1, currency = -1):
-        self.id = id
-        self.quotation = convert(currency, "EUR", quotation) if quotation != -1 else quotation
-        self.volume = volume
-        self.currency = currency
-    #FIXME: en fait osef des getters :D, ça a l'air d'être public par défaut
-    def get_id(self):
-        return self.id
-
-    def set_id(self, x):
-        self.id = x
-
-    def get_quotation(self):
-        return self.quotation
-
-    def set_quotation(self, x):
-        self.quotation = x
-
-    def get_currency(self):
-        return self.currency
-
-    def set_currency(self, x):
-        self.currency = x
-
-    def get_volume(self):
-        return self.volume
-
-    def set_volume(self, x):
-        self.volume = x
 
 def columns_to_str(columns):
     return "/".join(columns)
@@ -230,10 +200,13 @@ def buildnaifpf(assets, assetsratios):
         i += 1
     return res
 
+
 #Call Get All Assets
 print("Fetching all assets in database...")
 res_assets = get_assets()
 assets = json.loads(res_assets.content.decode('utf-8'))
+df = pd.DataFrame(assets)
+print(df)
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 
 #Getting our portfolios
@@ -242,6 +215,7 @@ main_portfolios = get_start_portfolio(assets)
 for i in main_portfolios:
     print("ID : " + i['ASSET_DATABASE_ID']['value'] + ", Label : " + i['LABEL']['value'])
 print('\n')
+
 
 #Variables for Epita and Reference portfolios
 epita = main_portfolios[0]
@@ -261,20 +235,20 @@ sortedratios = sorted(ratios.items(), key=lambda kv: kv[1], reverse=True)
 sortedratios = sortedratios[0:40]
 
 print("ID's with best Sharpe ratio: ")
-print("\n".join(str(v[0]) for v in sortedratios))
+print(", ".join(str(v[0]) for v in sortedratios))
+print("\n")
 
 
 #Printing REF portfolio ...
-print("Printing ref Portfolio...")
+#print("Printing ref Portfolio...")
 ref = get_portfolio(2201)
 refjson = json.loads(ref.content.decode('utf-8'))
-#print(refjson)
-print(json.dumps(refjson, indent=4, sort_keys=True))
+#print(json.dumps(refjson, indent=4, sort_keys=True))
 
 assetinfos = []
 copy_assets = assets
 for i in copy_assets:
-    print(i)
+    #print(i)
     assetinfos.append(AssetInfo(i["ASSET_DATABASE_ID"]["value"]))
     assetres = get_asset_by_id(assetinfos[-1].get_id())
     asset = json.loads(assetres.content.decode('utf-8'))    
@@ -285,6 +259,9 @@ for i in copy_assets:
         continue
     assetinfos[-1].set_quotation(quote[0]["close"]["value"])
     #FIXME: get volume
+
+for i in assetinfos:
+    print("Label ID: " + str(i.get_id()) + ", Currency: " + i.get_currency() + ", Quotation: " + str(i.get_quotation()))
 
 assets = []
 ########### Remove when assets getter is fine
