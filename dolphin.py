@@ -27,11 +27,53 @@ AUTH =('EPITA_GROUPE16', 'n3ky4D6cwmVe5Zax')
 #https: // dolphin.jump - technology.com: 8443 / api / v1 / asset / 1792
 
 
-#portefeuilleyolo:
+#portefeuilleyolo du turfu, i.e. les 15 assets avec le plus haut ratio de sharpes:
 defpf = [2201, 2142 ,2143 , 2132, 2188, 2112, 1990, 2064, 2144, 2187, 1968, 2191, 2147, 1897, 1877]
 #1-9: 10%
 #10-15: 10/6
 THUNES = 100000 #FIXME
+
+currencyvalues = {
+    "EUR" : 1,
+    "TEST" : 1.5
+}
+
+def convert(iin, out, value):
+    return value * currencyvalues[iin] / currencyvalues[out]
+
+print(convert("EUR", "TEST", 2))
+print("coucou")
+
+class AssetInfo:
+    def __init__(self, id = -1, quotation = -1, volume = -1, currency = -1):
+        self.id = id
+        self.quotation = convert(currency, "EUR", quotation) if quotation != -1 else quotation
+        self.volume = volume
+        self.currency = currency
+    #FIXME: en fait osef des getters :D, ça a l'air d'être public par défaut
+    def get_id(self):
+        return self.id
+
+    def set_id(self, x):
+        self.id = x
+
+    def get_quotation(self):
+        return self.quotation
+
+    def set_quotation(self, x):
+        self.quotation = x
+
+    def get_currency(self):
+        return self.currency
+
+    def set_currency(self, x):
+        self.currency = x
+
+    def get_volume(self):
+        return self.volume
+
+    def set_volume(self, x):
+        self.volume = x
 
 def columns_to_str(columns):
     return "/".join(columns)
@@ -69,7 +111,7 @@ def get_assets(date=None, full_response=True, columns=list()):
     return res
 
 #Récupère cotation sur un asset en particulier (id passé en paramètre) pour dates hardcodées FIXME CHECK LA DATE
-def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()):
+def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()): #FIXME je crois que t'avais modif un truc (la période)
     endpointApi = "/asset/" + str(id) + "/quote"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + "?start_date=2013-06-14&end_date=2019-04-19"
@@ -157,7 +199,36 @@ def post_ratio(ratio, assets, date=None, full_response=False, columns=list()):
     res = requests.post(path,data=json.dumps(params),auth=AUTH,verify=False)
     return res
 
-
+def buildnaifpf(assets, assetsratios):
+    res = []
+    missing = 0 #FIXME: adjust with remaining THUNES?
+    i = 0
+    for a in assets :
+        val = THUNES * assetsratios[i] + missing
+        if val > THUNES / 10:
+            print("ERROR: > 10% for id: " + str(assets[i].id) + ", adjusting...\n")
+            missing = val - THUNES / 10
+            val = THUNES / 10
+        wqu = val / assets[i].quotation
+        diff = wqu - assets[i].volume
+        if diff > 0:
+            print("ERROR: not enough assets for id: " + str(assets[i].id) + ", adjusting...\n")
+            missing += diff * assets[i].quotation
+            qu = assets[i].volume
+        else:
+            qu = wqu
+        diffint = qu - int(qu)
+        if diffint != 0:
+            print("WARNING: quantity is not an integer for id: " + str(assets[i].id) + ", adjusting...") 
+            missing += diffint * assets[i].quotation
+        res.append(
+            {
+                'id' : a.id,
+                'quantity' : qu
+            }
+        )
+        i += 1
+    return res
 
 #Call Get All Assets
 print("Fetching all assets in database...")
@@ -200,57 +271,40 @@ refjson = json.loads(ref.content.decode('utf-8'))
 #print(refjson)
 print(json.dumps(refjson, indent=4, sort_keys=True))
 
-def convert(iin, out, value):
-    return value
-
-class assetinfo:
-    def __init__(self, id = -1, cotation = -1, nb = -1, currency = "EUR"):
-        self.id = id
-        self.cotation = convert(currency, "EUR", cotation)
-        self.nb = nb
-
-
-def buildnaifpf(assets, assetsratios):
-    res = []
-    missing = 0 #FIXME: adjust with remaining THUNES?
-    i = 0
-    for a in assets :
-        val = THUNES * assetsratios[i] + missing
-        if val > THUNES / 10:
-            print("ERROR: > 10% for id: " + str(assets[i].id) + ", adjusting...\n")
-            missing = val - THUNES / 10
-            val = THUNES / 10
-        wqu = val / assets[i].cotation
-        diff = wqu - assets[i].nb
-        if diff > 0:
-            print("ERROR: not enough assets for id: " + str(assets[i].id) + ", adjusting...\n")
-            missing += diff * assets[i].cotation
-            qu = assets[i].nb
-        else:
-            qu = wqu
-        diffint = qu - int(qu)
-        if diffint != 0:
-            print("WARNING: quantity is not an integer for id: " + str(assets[i].id) + ", adjusting...") 
-            missing += diffint * assets[i].cotation
-        res.append(
-            {
-                'id' : a.id,
-                'quantity' : qu
-            }
-        )
-        i += 1
-    return res
+assetinfos = []
+copy_assets = assets
+for i in copy_assets:
+    print(i)
+    assetinfos.append(AssetInfo(i["ASSET_DATABASE_ID"]["value"]))
+    assetres = get_asset_by_id(assetinfos[-1].get_id())
+    asset = json.loads(assetres.content.decode('utf-8'))    
+    assetinfos[-1].set_currency(asset["CURRENCY"]["value"])
+    quoteres = get_asset_quotation_by_id(assetinfos[-1].get_id())
+    quote = json.loads(quoteres.content.decode('utf-8'))
+    if len(quote) == 0:
+        continue
+    assetinfos[-1].set_quotation(quote[0]["close"]["value"])
+    #FIXME: get volume
 
 assets = []
-assetsvalues = [] #FIXME: les récupérer
-assetsnb = [] #FIXME: les récupérer
+########### Remove when assets getter is fine
+assetsvalues = []
+assetsnb = []
 assetsratios = []
 for i  in range(15):
-    assets.append(assetinfo(defpf[i], 1, 100000, 'EUR'))
+    assets.append(AssetInfo(defpf[i], 1, 100000, 'EUR'))
 for i in range(9):    
     assetsratios.append(0.1)
 for i in range(6):
     assetsratios.append(0.1/6)
+###########
+for i in defpf:
+    for a in assetinfos:
+        if a.id == i:
+            assets.append(a)
+            break
+    print("ERROR: ID not found\n")
+
 pf = buildnaifpf(assets, assetsratios)
 res = set_portfolio(1835, pf)
 print(res.status_code) #OK
@@ -267,7 +321,7 @@ print(json.dumps(refjson, indent=4, sort_keys=True))
 #samarchpa: error 500 sans message d'erreur :D
 
 #bruteforce les ids ma bite
-#for id in range(1000):
+#for id in range(2000):
 #    print("id: " + str(id))
 #    ref = get_portfolio(id)
 #    print(json.loads(ref.content.decode('utf-8')))
