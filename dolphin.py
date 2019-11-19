@@ -21,6 +21,7 @@ df = pd.DataFrame(assets)
 print(df)
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 
+
 #Getting our portfolios
 print("Getting our portfolios...")
 main_portfolios = get_start_portfolio(assets)
