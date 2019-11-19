@@ -6,11 +6,11 @@ def convert(iin, out, value):
 def columns_to_str(columns):
     return "/".join(columns)
 
-def _json_object_hook(d):
-    return namedtuple('X', d.keys())(*d.values())
+#def _json_object_hook(d):
+#    return namedtuple('X', d.keys())(*d.values())
 
-def json2obj(data):
-    return json.loads(data, object_hook=_json_object_hook)
+#def json2obj(data):
+#    return json.loads(data, object_hook=_json_object_hook)
 
 
 #Récupère infos sur un asset en particulier (id passé en paramètre)
