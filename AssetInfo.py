@@ -1,9 +1,9 @@
 class AssetInfo:
     def __init__(self, id = -1, quotation = -1, volume = -1, currency = -1):
         self.id = id
-        self.quotation = convert(currency, "EUR", quotation) if quotation != -1 else quotation
+        self.quotation = quotation
         self.volume = volume
-        self.currency = currency
+        self.currency = "EUR" #convert(currency, "EUR", quotation) if quotation != -1 else quotation
     #FIXME: en fait osef des getters :D, ça a l'air d'être public par défaut
     def get_id(self):
         return self.id

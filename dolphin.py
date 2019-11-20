@@ -8,6 +8,28 @@ from apiCalls import *
 # - Evaluation du sharpe du 14/06/2013 au 18/04/2019 (Modification du sujet, cf. mail)
 # - 10/20 attribué automatiquement si ratio de sharpe supérieur strictement au portefeuille naif
 
+#volatilité: 10
+def optimize(assets, power):
+    def crotedebic(p, val):
+        try:
+            return (int(p[0]), float(p[1][val]['value'].replace(",", ".")))
+        except:
+            return ("tamer", 0)
+    ids = [a['ASSET_DATABASE_ID']['value'] for a in assets]
+    ret_volatilities = json.loads(post_ratio([10], ids).content.decode('utf-8'))
+    troll = dict(map(lambda p: crotedebic(p,'10') , ret_volatilities.items()))
+    volatilities = dict(filter(lambda prout: prout[0] != "tamer", troll.items()))    
+    ret_sratios = json.loads(post_ratio([12], ids).content.decode('utf-8'))
+    troll = dict(map(lambda p: crotedebic(p,'12') , ret_sratios.items()))
+    sratios = dict(filter(lambda prout: prout[0] != "tamer", troll.items()))
+    newratios = dict()
+    for r in sratios.items():
+        newratios[r[0]] = r[1] / (volatilities[r[0]]**power)
+    final = sorted(newratios.items(), key = lambda p: p[1], reverse=True)
+    chingching = [f[0] for f in final]
+    chinghing = chingching[:15]
+    return chingching
+
 oursharpes = post_ratio([12], [1835])
 refsharpes = post_ratio([12], [2201])
 print("our sharpes: " + str(json.loads(oursharpes.content.decode('utf-8'))))
@@ -20,6 +42,19 @@ assets = json.loads(res_assets.content.decode('utf-8'))
 df = pd.DataFrame(assets)
 print(df)
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
+
+def testnico():
+    yolo = optimize(assets, 1)
+    #FIXME: make class from yolo
+    yololo = []
+    for y in yolo:
+        yololo.append(AssetInfo(y, 1, 1000000, "EUR"))
+    yolopf = buildnaifpf(yololo, [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,])
+    set_portfolio(1835, yolopf)
+    yoloret = post_ratio([12], [1835])
+    print("our yolo sharpes: " + str(json.loads(yoloret.content.decode('utf-8'))))
+    exit(0)
+testnico()
 
 #Getting our portfolios
 print("Getting our portfolios...")
