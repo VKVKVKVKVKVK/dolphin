@@ -15,16 +15,32 @@ print("ref sharpes: " + str(json.loads(refsharpes.content.decode('utf-8'))))
 
 #Call Get All Assets
 print("Fetching all assets in database...")
-res_assets = get_assets()
-assets = json.loads(res_assets.content.decode('utf-8'))
-df = pd.DataFrame(assets)
-print(df)
+assets = {}
+if os.path.exists("json/assets.json"):
+    with open('json/assets.json') as json_file:
+        assets = json.load(json_file)
+else:
+    res_assets = get_assets()
+    assets = json.loads(res_assets.content.decode('utf-8'))
+    with open('json/assets.json', 'w+') as json_file:
+        json.dump(assets, json_file, indent=4, sort_keys=True)
+
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 
 
 #Getting our portfolios
 print("Getting our portfolios...")
-main_portfolios = get_start_portfolio(assets)
+main_portfolios = {}
+if os.path.exists("json/main_portfolios.json"):
+    with open('json/main_portfolios.json') as json_file:
+        main_portfolios = json.load(json_file)
+else:
+    main_portfolios = get_start_portfolio(assets)
+    with open('json/main_portfolios.json', 'w+') as json_file:
+        json.dump(main_portfolios, json_file, indent=4, sort_keys=True)
+
+
+#main_portfolios = get_start_portfolio(assets)
 for i in main_portfolios:
     print("ID : " + i['ASSET_DATABASE_ID']['value'] + ", Label : " + i['LABEL']['value'])
 print('\n')
@@ -60,17 +76,38 @@ refjson = json.loads(ref.content.decode('utf-8'))
 
 assetinfos = []
 copy_assets = assets
+#assets_by_id = {}
+
 for i in copy_assets:
-    #print(i)
+    if i["ASSET_DATABASE_ID"]["value"] == "1835" or i["ASSET_DATABASE_ID"]["value"] == "2201" :
+        continue
     assetinfos.append(AssetInfo(i["ASSET_DATABASE_ID"]["value"]))
+
+    """ 
+    if os.path.exists("json/assets_by_id.json"):
+        with open('json/assets_by_id.json') as json_file:
+            assets_by_id = json.load(json_file)
+        for j in assets_by_id:
+            if j["ASSET_DATABASE_ID"]["value"] == i["ASSET_DATABASE_ID"]["value"]:
+                
+    else:
+        main_portfolios = get_start_portfolio(assets)
+        with open('json/main_portfolios.json', 'w+') as json_file:
+            json.dump(main_portfolios, json_file, indent=4, sort_keys=True)
+    
+    """
     assetres = get_asset_by_id(assetinfos[-1].get_id())
-    asset = json.loads(assetres.content.decode('utf-8'))    
+    asset = json.loads(assetres.content.decode('utf-8'))
+    print(asset["ASSET_DATABASE_ID"]["value"])
     assetinfos[-1].set_currency(asset["CURRENCY"]["value"])
+
     quoteres = get_asset_quotation_by_id(assetinfos[-1].get_id())
     quote = json.loads(quoteres.content.decode('utf-8'))
     if len(quote) == 0:
         continue
+    #print(json.dumps(quote, indent=4, sort_keys=True))
     assetinfos[-1].set_quotation(quote[0]["close"]["value"])
+    #assetinfos[-1].set_volume(quote[0]["volume"]["value"])
     #FIXME: get volume
 
 for i in assetinfos:

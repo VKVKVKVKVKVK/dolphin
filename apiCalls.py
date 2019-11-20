@@ -18,7 +18,6 @@ def convert_currency(input, date=None, full_response=True, columns=list()):
     payload = {'date': date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + input + "/to/" \
            + "EUR" + "?date=2013-06-14"
-    print(path)
     res = requests.get(path,
                        params=payload,
                        auth=AUTH,
