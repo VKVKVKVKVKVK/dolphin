@@ -45,16 +45,16 @@ print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 
 def testnico():
     yolo = optimize(assets, 1)
-    #FIXME: make class from yolo
     yololo = []
-    for y in yolo:
+    for y in yolo[:15]:
         yololo.append(AssetInfo(y, 1, 1000000, "EUR"))
-    yolopf = buildnaifpf(yololo, [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,])
+    yolopf = buildnaifpf(yololo, [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
     set_portfolio(1835, yolopf)
     yoloret = post_ratio([12], [1835])
     print("our yolo sharpes: " + str(json.loads(yoloret.content.decode('utf-8'))))
+    #FIXME: hum, c'est bien comme ça qu'on récupère le ratio de sharpe du portefeuille? paske la valeur ne change pas avec le nb portefeuille
     exit(0)
-testnico()
+#testnico()
 
 #Getting our portfolios
 print("Getting our portfolios...")

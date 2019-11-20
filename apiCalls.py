@@ -13,7 +13,7 @@ def columns_to_str(columns):
 #    return json.loads(data, object_hook=_json_object_hook)
 
 
-#Récupère infos sur un asset en particulier (id passé en paramètre)
+#Rï¿½cupï¿½re infos sur un asset en particulier (id passï¿½ en paramï¿½tre)
 def get_asset_by_id(id, date=None, full_response=False, columns=list()):
     endpointApi = "/asset/" + str(id)
     payload = {'date':date, 'fullResponse': full_response}
@@ -25,7 +25,7 @@ def get_asset_by_id(id, date=None, full_response=False, columns=list()):
                        verify=False)
     return res
 
-#Récupère liste de tout les assets avec ID, Label, Type et Cotation à la date spécifiée (harcodée 2013-06-14 ici)
+#Rï¿½cupï¿½re liste de tout les assets avec ID, Label, Type et Cotation ï¿½ la date spï¿½cifiï¿½e (harcodï¿½e 2013-06-14 ici)
 def get_assets(date=None, full_response=True, columns=list()):
     endpointApi = "/asset"
     payload = {'date':date, 'fullResponse': full_response}
@@ -38,8 +38,8 @@ def get_assets(date=None, full_response=True, columns=list()):
                        verify=False)
     return res
 
-#Récupère cotation sur un asset en particulier (id passé en paramètre) pour dates hardcodées FIXME CHECK LA DATE
-def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()): #FIXME je crois que t'avais modif un truc (la période)
+#Rï¿½cupï¿½re cotation sur un asset en particulier (id passï¿½ en paramï¿½tre) pour dates hardcodï¿½es FIXME CHECK LA DATE
+def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()): #FIXME je crois que t'avais modif un truc (la pï¿½riode)
     endpointApi = "/asset/" + str(id) + "/quote"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + "?start_date=2013-06-14&end_date=2019-04-19"
@@ -50,7 +50,7 @@ def get_asset_quotation_by_id(id, date=None, full_response=False, columns=list()
                        verify=False)
     return res
 
-#Récupère les ratios existants
+#Rï¿½cupï¿½re les ratios existants
 def get_ratios(date=None, full_response=False, columns=list()):
     endpointApi = "/ratio/"
     payload = {'date':date, 'fullResponse': full_response}
@@ -69,7 +69,7 @@ def get_start_portfolio(assets):
             start.append(i)
     return start
 
-#Récupère la  composition d'un portefeuille
+#Rï¿½cupï¿½re la  composition d'un portefeuille
 def get_portfolio(portfolio_id, date=None, full_response=False, columns=list()):
     endpointApi = "/portfolio/"
     payload = {'date':date, 'fullResponse': full_response}
@@ -90,7 +90,7 @@ def set_portfolio(portfolio_id, assets, date=None, full_response=False, columns=
     params = {
         'label' : 'EPITA_PTF_16',
         'currency' : {
-            "code": "EUR" #FIXME maybe switch to EUR/€ ?
+            "code": "EUR" #FIXME maybe switch to EUR/ï¿½ ?
         },
         'type' : 'front',
         'values' : {
