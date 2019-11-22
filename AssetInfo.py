@@ -28,3 +28,4 @@ class AssetInfo:
 
     def set_volume(self, x):
         self.volume = x
+

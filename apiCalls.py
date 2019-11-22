@@ -51,7 +51,7 @@ def get_assets(date=None, full_response=True, columns=list()):
     endpointApi = "/asset"
     payload = {'date':date, 'fullResponse': full_response}
     path = URL + endpointApi + columns_to_str(columns) + "?columns=ASSET_DATABASE_ID" + "&columns=LABEL" \
-           + "&columns=TYPE" + "&columns=LAST_CLOSE_VALUE_IN_CURR" + "&date=2013-06-14"
+           + "&columns=TYPE" + "&columns=LAST_CLOSE_VALUE_IN_CURR" + "&columns=IS_PORTFOLIO" + "&date=2013-06-14"
     #print(path)
     res = requests.get(path,
                        params=payload,
@@ -148,16 +148,17 @@ def post_ratio(ratio, assets, date=None, full_response=False, columns=list()):
     res = requests.post(path,data=json.dumps(params),auth=AUTH,verify=False)
     return res
 
+#Build portfolio based on volume constraints
 def buildnaifpf(assets, assetsratios):
     res = []
-    missing = 0 #FIXME: adjust with remaining THUNES?
+    missing = 0 #FIXME: adjust with remaining CAPITAL?
     i = 0
     for a in assets :
-        val = THUNES * assetsratios[i] + missing
-        if val > THUNES / 10:
+        val = CAPITAL * assetsratios[i] + missing
+        if val > CAPITAL / 10:
             print("ERROR: > 10% for id: " + str(assets[i].id) + ", adjusting...\n")
-            missing = val - THUNES / 10
-            val = THUNES / 10
+            missing = val - CAPITAL / 10
+            val = CAPITAL / 10
         wqu = val / assets[i].quotation
         diff = wqu - assets[i].volume
         if diff > 0:

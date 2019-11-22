@@ -10,33 +10,52 @@ from apiCalls import *
 
 #volatilité: 10
 def optimize(assets, power):
+
+    #If value found, cast in float, otherwise, write "nofloatdata"
     def pairid_floatval(p, val):
         try:
             return (int(p[0]), float(p[1][val]['value'].replace(",", ".")))
         except:
             return ("nofloatdata", 0)
+
+    #Store array of all ids
     ids = [a['ASSET_DATABASE_ID']['value'] for a in assets]
-    #get volatilites
+
+                ############ VOLATILITIES ############
+
+    #get volatilities (ratio number 10 to call on API) values on all assets
     ret_volatilities = json.loads(post_ratio([10], ids).content.decode('utf-8'))
-    #get only id and volatility value
+
+    #Create dictionnary with ids and volatilities
     volatilities = dict(map(lambda p: pairid_floatval(p,'10') , ret_volatilities.items()))
-    #remove no data items
-    volatilities = dict(filter(lambda p: p[0] != "nofloatdata", volatilities.items()))    
+
+    #Remove assets with no data for volatility
+    volatilities = dict(filter(lambda p: p[0] != "nofloatdata", volatilities.items()))
+
+                ############ SHARPE ############
+
     #get sharpe ratios
     ret_sratios = json.loads(post_ratio([12], ids).content.decode('utf-8'))
-    #get only id and sharpes value
+
+    #Create dictionnary with id and sharpes value
     sharpes = dict(map(lambda p: pairid_floatval(p,'12') , ret_sratios.items()))
+
     #remove no data items
     sratios = dict(filter(lambda p: p[0] != "nofloatdata", sharpes.items()))
+
     #compute new ratios (sharpe/volatility)
     newratios = dict()
     for r in sratios.items():
         newratios[r[0]] = r[1] / (volatilities[r[0]]**power)
+
+    #Sort them
     final = sorted(newratios.items(), key = lambda p: p[1], reverse=True)
-    #get ids for best values and return it
-    chingching = [f[0] for f in final]
-    chinghing = chingching[:15]
-    return chingching
+
+    #get ids for best values and return the first 15 values
+    best_values = [f[0] for f in final]
+    top_15 = best_values[:15]
+    return top_15
+
 
 oursharpes = post_ratio([12], [1835])
 refsharpes = post_ratio([12], [2201])
@@ -52,16 +71,27 @@ if os.path.exists("json/assets.json"):
 else:
     res_assets = get_assets()
     assets = json.loads(res_assets.content.decode('utf-8'))
+
+    output_dict = [x for x in assets if x['IS_PORTFOLIO']['value'] == 'false']
+
+
     with open('json/assets.json', 'w+') as json_file:
-        json.dump(assets, json_file, indent=4, sort_keys=True)
+        json.dump(output_dict, json_file, indent=4, sort_keys=True)
 
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 
+#Building portfolio with CAPITAL constraints
 def testoptimizedpfgenerator():
+    #Get 15 best values according to our function
     bestassets = optimize(assets, 1)
     tmpinfos = []
     for y in bestassets[:15]:
         tmpinfos.append(AssetInfo(y, 1, 1000000, "EUR"))
+    for t in tmpinfos:
+        res = post_ratio([12], [t.get_id()])
+        sharpe = json.loads(res.content.decode('utf-8'))
+        print("Id: " + str(t.get_id()) + ", Sharpe: " + str(sharpe))
+
     pf = buildnaifpf(tmpinfos, [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
     set_portfolio(1835, pf)
     ret = post_ratio([12], [1835])
