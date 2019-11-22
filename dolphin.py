@@ -10,22 +10,30 @@ from apiCalls import *
 
 #volatilité: 10
 def optimize(assets, power):
-    def crotedebic(p, val):
+    def pairid_floatval(p, val):
         try:
             return (int(p[0]), float(p[1][val]['value'].replace(",", ".")))
         except:
-            return ("tamer", 0)
+            return ("nofloatdata", 0)
     ids = [a['ASSET_DATABASE_ID']['value'] for a in assets]
+    #get volatilites
     ret_volatilities = json.loads(post_ratio([10], ids).content.decode('utf-8'))
-    troll = dict(map(lambda p: crotedebic(p,'10') , ret_volatilities.items()))
-    volatilities = dict(filter(lambda prout: prout[0] != "tamer", troll.items()))    
+    #get only id and volatility value
+    volatilities = dict(map(lambda p: pairid_floatval(p,'10') , ret_volatilities.items()))
+    #remove no data items
+    volatilities = dict(filter(lambda p: p[0] != "nofloatdata", volatilities.items()))    
+    #get sharpe ratios
     ret_sratios = json.loads(post_ratio([12], ids).content.decode('utf-8'))
-    troll = dict(map(lambda p: crotedebic(p,'12') , ret_sratios.items()))
-    sratios = dict(filter(lambda prout: prout[0] != "tamer", troll.items()))
+    #get only id and sharpes value
+    sharpes = dict(map(lambda p: pairid_floatval(p,'12') , ret_sratios.items()))
+    #remove no data items
+    sratios = dict(filter(lambda p: p[0] != "nofloatdata", sharpes.items()))
+    #compute new ratios (sharpe/volatility)
     newratios = dict()
     for r in sratios.items():
         newratios[r[0]] = r[1] / (volatilities[r[0]]**power)
     final = sorted(newratios.items(), key = lambda p: p[1], reverse=True)
+    #get ids for best values and return it
     chingching = [f[0] for f in final]
     chinghing = chingching[:15]
     return chingching
@@ -49,18 +57,17 @@ else:
 
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 
-def testnico():
-    yolo = optimize(assets, 1)
-    yololo = []
-    for y in yolo[:15]:
-        yololo.append(AssetInfo(y, 1, 1000000, "EUR"))
-    yolopf = buildnaifpf(yololo, [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
-    set_portfolio(1835, yolopf)
-    yoloret = post_ratio([12], [1835])
-    print("our yolo sharpes: " + str(json.loads(yoloret.content.decode('utf-8'))))
-    #FIXME: hum, c'est bien comme ça qu'on récupère le ratio de sharpe du portefeuille? paske la valeur ne change pas avec le nb portefeuille
+def testoptimizedpfgenerator():
+    bestassets = optimize(assets, 1)
+    tmpinfos = []
+    for y in bestassets[:15]:
+        tmpinfos.append(AssetInfo(y, 1, 1000000, "EUR"))
+    pf = buildnaifpf(tmpinfos, [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
+    set_portfolio(1835, pf)
+    ret = post_ratio([12], [1835])
+    print("our yolo sharpes: " + str(json.loads(ret.content.decode('utf-8'))))
     exit(0)
-#testnico()
+testoptimizedpfgenerator()
 
 #Getting our portfolios
 print("Getting our portfolios...")
