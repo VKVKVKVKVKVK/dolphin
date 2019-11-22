@@ -1,7 +1,28 @@
 from vars import *
 
-def convert(iin, out, value):
-    return value * currencyvalues[iin] / currencyvalues[out]
+def convert(input_currency, value):
+    call = convert_currency(input_currency)
+    answer = json.loads(call.content.decode('utf-8'))
+    temp = answer['rate']['value']
+    #Convert string to list for converting to correct format: "x,xxx" => "x.xxx"
+    listvalues = list(temp)
+    for n, i in enumerate(listvalues):
+        if i == ",":
+            listvalues[n] = "."
+    final = "".join(listvalues)
+    return float(final)*float(value)
+
+
+def convert_currency(input, date=None, full_response=True, columns=list()):
+    endpointApi = "/currency/rate/"
+    payload = {'date': date, 'fullResponse': full_response}
+    path = URL + endpointApi + columns_to_str(columns) + input + "/to/" \
+           + "EUR" + "?date=2013-06-14"
+    res = requests.get(path,
+                       params=payload,
+                       auth=AUTH,
+                       verify=False)
+    return res
 
 def columns_to_str(columns):
     return "/".join(columns)
