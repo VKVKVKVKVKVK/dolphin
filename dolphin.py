@@ -22,13 +22,10 @@ def optimize(assets, power):
     ids = [a['ASSET_DATABASE_ID']['value'] for a in assets]
 
                 ############ VOLATILITIES ############
-
     #get volatilities (ratio number 10 to call on API) values on all assets
     ret_volatilities = json.loads(post_ratio([10], ids).content.decode('utf-8'))
-
     #Create dictionnary with ids and volatilities
     volatilities = dict(map(lambda p: pairid_floatval(p,'10') , ret_volatilities.items()))
-
     #Remove assets with no data for volatility
     volatilities = dict(filter(lambda p: p[0] != "nofloatdata", volatilities.items()))
 
@@ -36,13 +33,10 @@ def optimize(assets, power):
 
     #get sharpe ratios
     ret_sratios = json.loads(post_ratio([12], ids).content.decode('utf-8'))
-
     #Create dictionnary with id and sharpes value
     sharpes = dict(map(lambda p: pairid_floatval(p,'12') , ret_sratios.items()))
-
     #remove no data items
     sratios = dict(filter(lambda p: p[0] != "nofloatdata", sharpes.items()))
-
     #compute new ratios (sharpe/volatility)
     newratios = dict()
     for r in sratios.items():
@@ -57,10 +51,11 @@ def optimize(assets, power):
     return top_15
 
 
+
 oursharpes = post_ratio([12], [1835])
 refsharpes = post_ratio([12], [2201])
-print("our sharpes: " + str(json.loads(oursharpes.content.decode('utf-8'))))
-print("ref sharpes: " + str(json.loads(refsharpes.content.decode('utf-8'))))
+print("Our sharpes: " + str(json.loads(oursharpes.content.decode('utf-8'))))
+print("Ref sharpes: " + str(json.loads(refsharpes.content.decode('utf-8'))))
 
 #Call Get All Assets
 print("Fetching all assets in database...")
@@ -153,20 +148,6 @@ for i in copy_assets:
     if i["ASSET_DATABASE_ID"]["value"] == "1835" or i["ASSET_DATABASE_ID"]["value"] == "2201" :
         continue
     assetinfos.append(AssetInfo(i["ASSET_DATABASE_ID"]["value"]))
-
-    """ 
-    if os.path.exists("json/assets_by_id.json"):
-        with open('json/assets_by_id.json') as json_file:
-            assets_by_id = json.load(json_file)
-        for j in assets_by_id:
-            if j["ASSET_DATABASE_ID"]["value"] == i["ASSET_DATABASE_ID"]["value"]:
-                
-    else:
-        main_portfolios = get_start_portfolio(assets)
-        with open('json/main_portfolios.json', 'w+') as json_file:
-            json.dump(main_portfolios, json_file, indent=4, sort_keys=True)
-    
-    """
     assetres = get_asset_by_id(assetinfos[-1].get_id())
     asset = json.loads(assetres.content.decode('utf-8'))
     print(asset["ASSET_DATABASE_ID"]["value"])
@@ -177,7 +158,7 @@ for i in copy_assets:
     if len(quote) == 0:
         continue
     #print(json.dumps(quote, indent=4, sort_keys=True))
-    assetinfos[-1].set_quotation(quote[0]["close"]["value"])
+    assetinfos[-1].set_quotation(convert(asset["CURRENCY"]["value"], quote[0]["close"]["value"]))
     #assetinfos[-1].set_volume(quote[0]["volume"]["value"])
     #FIXME: get volume
 
