@@ -48,7 +48,7 @@ def optimize(assets, power):
     #get ids for best values and return the first 15 values
     best_values = [f[0] for f in final]
     top_15 = best_values[:15]
-    return top_15
+    return top_15, newratios
 
 
 
@@ -76,45 +76,33 @@ else:
 print("Total number of Assets in Database: " + str(len(assets)) + "\n")
 
 #Building portfolio with CAPITAL constraints
-def testoptimizedpfgenerator():
+def testoptimizedpfgenerator(infos):
     #Get 15 best values according to our function
-    bestassets = optimize(assets, 1)
+    bestassets, customsharpes = optimize(assets, 1)
     tmpinfos = []
-    for y in bestassets[:15]:
-        tmpinfos.append(AssetInfo(y, 1, 1000000, "EUR"))
+    #for y in bestassets[:15]:
+    #    tmpinfos.append(AssetInfo(y, 1, 1000000, "EUR"))    
+    for a in bestassets:
+        for i in infos:
+            if a == i.id:
+                tmpinfos.append(i)
     for t in tmpinfos:
         res = post_ratio([12], [t.get_id()])
         sharpe = json.loads(res.content.decode('utf-8'))
         print("Id: " + str(t.get_id()) + ", Sharpe: " + str(sharpe))
-
-    pf = buildnaifpf(tmpinfos, [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
+    ratios = []
+    ratios.append(0.1)
+    for i in range(1, len(tmpinfos)):
+        ratios.append(customsharpes[tmpinfos[i].id] / customsharpes[tmpinfos[i-1].id] * ratios[-1])
+        if ratios[-1] < 0:
+            print("WARNING: RATIO  < 1")
+        #FIXME(oupa): not all checks done
+    pf = buildnaifpf(tmpinfos, ratios) #[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
     set_portfolio(1835, pf)
     ret = post_ratio([12], [1835])
     print("our yolo sharpes: " + str(json.loads(ret.content.decode('utf-8'))))
     exit(0)
-testoptimizedpfgenerator()
 
-#Getting our portfolios
-print("Getting our portfolios...")
-main_portfolios = {}
-if os.path.exists("json/main_portfolios.json"):
-    with open('json/main_portfolios.json') as json_file:
-        main_portfolios = json.load(json_file)
-else:
-    main_portfolios = get_start_portfolio(assets)
-    with open('json/main_portfolios.json', 'w+') as json_file:
-        json.dump(main_portfolios, json_file, indent=4, sort_keys=True)
-
-
-#main_portfolios = get_start_portfolio(assets)
-for i in main_portfolios:
-    print("ID : " + i['ASSET_DATABASE_ID']['value'] + ", Label : " + i['LABEL']['value'])
-print('\n')
-
-
-#Variables for Epita and Reference portfolios
-epita = main_portfolios[0]
-ref = main_portfolios[1]
 
 
 assetsids = [o['ASSET_DATABASE_ID']['value'] for o in assets]
@@ -147,7 +135,7 @@ copy_assets = assets
 for i in copy_assets:
     if i["ASSET_DATABASE_ID"]["value"] == "1835" or i["ASSET_DATABASE_ID"]["value"] == "2201" :
         continue
-    assetinfos.append(AssetInfo(i["ASSET_DATABASE_ID"]["value"]))
+    assetinfos.append(AssetInfo(int(i["ASSET_DATABASE_ID"]["value"])))
     assetres = get_asset_by_id(assetinfos[-1].get_id())
     asset = json.loads(assetres.content.decode('utf-8'))
     print(asset["ASSET_DATABASE_ID"]["value"])
@@ -161,6 +149,30 @@ for i in copy_assets:
     assetinfos[-1].set_quotation(convert(asset["CURRENCY"]["value"], quote[0]["close"]["value"]))
     #assetinfos[-1].set_volume(quote[0]["volume"]["value"])
     #FIXME: get volume
+
+testoptimizedpfgenerator(assetinfos)
+
+#Getting our portfolios
+print("Getting our portfolios...")
+main_portfolios = {}
+if os.path.exists("json/main_portfolios.json"):
+    with open('json/main_portfolios.json') as json_file:
+        main_portfolios = json.load(json_file)
+else:
+    main_portfolios = get_start_portfolio(assets)
+    with open('json/main_portfolios.json', 'w+') as json_file:
+        json.dump(main_portfolios, json_file, indent=4, sort_keys=True)
+
+
+#Variables for Epita and Reference portfolios
+epita = main_portfolios[0]
+ref = main_portfolios[1]
+
+#main_portfolios = get_start_portfolio(assets)
+for i in main_portfolios:
+    print("ID : " + i['ASSET_DATABASE_ID']['value'] + ", Label : " + i['LABEL']['value'])
+print('\n')
+
 
 for i in assetinfos:
     print("Label ID: " + str(i.get_id()) + ", Currency: " + i.get_currency() + ", Quotation: " + str(i.get_quotation()))

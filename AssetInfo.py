@@ -1,5 +1,5 @@
 class AssetInfo:
-    def __init__(self, id = -1, quotation = -1, volume = -1, currency = -1):
+    def __init__(self, id = -1, quotation = -1, volume = 1000000, currency = -1):
         self.id = id
         self.quotation = quotation
         self.volume = volume

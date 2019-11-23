@@ -10,7 +10,7 @@ def convert(input_currency, value):
         if i == ",":
             listvalues[n] = "."
     final = "".join(listvalues)
-    return float(final)*float(value)
+    return float(final)*float(value.replace(",","."))
 
 
 def convert_currency(input, date=None, full_response=True, columns=list()):
@@ -171,6 +171,7 @@ def buildnaifpf(assets, assetsratios):
         if diffint != 0:
             print("WARNING: quantity is not an integer for id: " + str(assets[i].id) + ", adjusting...") 
             missing += diffint * assets[i].quotation
+            qu = int(qu)
         res.append(
             {
                 'id' : a.id,
