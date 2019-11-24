@@ -35,7 +35,7 @@ assetinfos = getAssetInfos(assets)
 #assets_by_id = {}
 
 testoptimizedpfgenerator(assets, assetinfos)
-exit(0) ################################ IT MAY EXITS HERE ######################################## <------------
+exit(0) ################################ IT MAY EXIT HERE ######################################## <------------
 
 #FIXME: portfolios have been removed from variable "assets" -> get it with api
 #FIXME: save only REF in file (ours may change)

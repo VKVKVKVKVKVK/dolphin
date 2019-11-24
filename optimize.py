@@ -1,4 +1,5 @@
 from apiCalls import *
+from math import log
 
 #volatilité: 10
 def optimize(assets, power):
@@ -37,7 +38,8 @@ def optimize(assets, power):
     #Sort them
     final = sorted(newratios.items(), key = lambda p: p[1], reverse=True)
 
-    #get ids for best values and return the first 15 values
+    #get ids for best values and return the first n values
+    #FIXME: take at least 50% actions
     best_values = [f[0] for f in final]
     n = 22
     top_n = best_values[:n]
@@ -46,7 +48,7 @@ def optimize(assets, power):
 #Building portfolio with CAPITAL constraints
 def testoptimizedpfgenerator(assets, infos):
     #Get 15 best values according to our function
-    bestassets, customsharpes = optimize(assets, 0.6)
+    bestassets, customsharpes = optimize(assets, 0.6) #0.6
     tmpinfos = []
     #for y in bestassets[:15]:
     #    tmpinfos.append(AssetInfo(y, 1, 1000000, "EUR"))
@@ -58,13 +60,38 @@ def testoptimizedpfgenerator(assets, infos):
     #    res = post_ratio([12], [t.get_id()])
     #    sharpe = json.loads(res.content.decode('utf-8'))
     #    print("Id: " + str(t.get_id()) + ", Sharpe: " + str(sharpe))
+    sum = 0
     ratios = []
-    ratios.append(0.1)
+    ratios.append(1)
+    sum += 1
+
+    #original version:
+    #for i in range(1, len(tmpinfos)):
+    #    ratios.append(customsharpes[tmpinfos[i].id] / customsharpes[tmpinfos[i-1].id] * ratios[-1])
+    #    sum += ratios[-1]
+    
+    #test version (x : ratio):
+    def apply_func(x):
+        return log( x + 1, 10) / log(2, 10)
+        #return 0.8 * x**3 - 2.4 * x**2 + 2.6 * x
+        #return 0.682012 * x**3 - 2.04604 * x**2 + 2.36402 * x
+    def apply_n(x, n):
+        ret = x
+        for i in range(n):
+            ret = apply_func(ret)
+        return ret
     for i in range(1, len(tmpinfos)):
-        ratios.append(customsharpes[tmpinfos[i].id] / customsharpes[tmpinfos[i-1].id] * ratios[-1])
-        if ratios[-1] < 0:
-            print("WARNING: RATIO  < 1")
-        #FIXME(oupa): not all checks done
+        tmpval = apply_n(customsharpes[tmpinfos[i].id] / customsharpes[tmpinfos[i-1].id], 100 )
+        ratios.append( tmpval * ratios[-1])
+        sum += ratios[-1]
+            
+    for i in range(len(ratios)):
+        ratios[i] = ratios[i] / sum
+
+    for i in range(len(ratios)):
+        if ratios[i] > 0.1 or ratios[i] < 0.01:
+            print("ERROR: Invalid portfolio\n")
+    #FIXME(oupa): not all checks done
     pf = buildnaifpf(tmpinfos, ratios) #[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
     set_portfolio(1835, pf)
     set_portfolio(1835, pf) #set twice sinon c truc de merde se met pas à jour
@@ -106,7 +133,7 @@ def buildnaifpf(assets, assetsratios):
     return res
 
 
-#####OBSOLETE#####
+##### OBSOLETE #####
 
 def pfbysharpe(assetsinfos):
     assets = []
