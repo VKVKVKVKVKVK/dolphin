@@ -6,6 +6,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from collections import namedtuple
 from AssetInfo import AssetInfo
 import pandas as pd
+import pickle
+import time
 
 #FIXME: change hardcoded dates partout
 STARTDATE = "2013-06-14"

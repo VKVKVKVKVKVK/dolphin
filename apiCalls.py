@@ -147,36 +147,3 @@ def post_ratio(ratio, assets, date=None, full_response=False, columns=list()):
     }
     res = requests.post(path,data=json.dumps(params),auth=AUTH,verify=False)
     return res
-
-#Build portfolio based on volume constraints
-def buildnaifpf(assets, assetsratios):
-    res = []
-    missing = 0 #FIXME: adjust with remaining CAPITAL?
-    i = 0
-    for a in assets :
-        val = CAPITAL * assetsratios[i] + missing
-        if val > CAPITAL / 10:
-            print("ERROR: > 10% for id: " + str(assets[i].id) + ", adjusting...\n")
-            missing = val - CAPITAL / 10
-            val = CAPITAL / 10
-        wqu = val / assets[i].quotation
-        diff = wqu - assets[i].volume
-        if diff > 0:
-            print("ERROR: not enough assets for id: " + str(assets[i].id) + ", adjusting...\n")
-            missing += diff * assets[i].quotation
-            qu = assets[i].volume
-        else:
-            qu = wqu
-        diffint = qu - int(qu)
-        if diffint != 0:
-            print("WARNING: quantity is not an integer for id: " + str(assets[i].id) + ", adjusting...") 
-            missing += diffint * assets[i].quotation
-            qu = int(qu)
-        res.append(
-            {
-                'id' : a.id,
-                'quantity' : qu
-            }
-        )
-        i += 1
-    return res
