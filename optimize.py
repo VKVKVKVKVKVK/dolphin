@@ -47,8 +47,21 @@ def optimize(assets, power):
 
 #Building portfolio with CAPITAL constraints
 def testoptimizedpfgenerator(assets, infos):
+    dictinfos = {}
+    for i in infos:
+        dictinfos[i.id] = i
     #Get 15 best values according to our function
     bestassets, customsharpes = optimize(assets, 0.6) #0.6
+    actionsnb = 0
+    for ba in bestassets:
+        for a in assets:
+            if int(a['ASSET_DATABASE_ID']['value']) == ba:
+                if a['TYPE']['value'] == 'STOCK':
+                    actionsnb += 1
+                break
+    stockratio = actionsnb / len(bestassets)
+    if stockratio < 0.5:
+        print("ERROR: Invalid STOCK ratio: " + str(stockratio))
     tmpinfos = []
     #for y in bestassets[:15]:
     #    tmpinfos.append(AssetInfo(y, 1, 1000000, "EUR"))
@@ -72,7 +85,9 @@ def testoptimizedpfgenerator(assets, infos):
     
     #test version (x : ratio):
     def apply_func(x):
-        return log( x + 1, 10) / log(2, 10)
+        return 1
+        #return - (1.5*x - 0.75)**2 + 1
+        #return log( x + 1, 10) / log(2, 10)
         #return 0.8 * x**3 - 2.4 * x**2 + 2.6 * x
         #return 0.682012 * x**3 - 2.04604 * x**2 + 2.36402 * x
     def apply_n(x, n):
@@ -81,7 +96,7 @@ def testoptimizedpfgenerator(assets, infos):
             ret = apply_func(ret)
         return ret
     for i in range(1, len(tmpinfos)):
-        tmpval = apply_n(customsharpes[tmpinfos[i].id] / customsharpes[tmpinfos[i-1].id], 100 )
+        tmpval = apply_n(customsharpes[tmpinfos[i].id] / customsharpes[tmpinfos[i-1].id], 1 )
         ratios.append( tmpval * ratios[-1])
         sum += ratios[-1]
             
@@ -90,9 +105,18 @@ def testoptimizedpfgenerator(assets, infos):
 
     for i in range(len(ratios)):
         if ratios[i] > 0.1 or ratios[i] < 0.01:
-            print("ERROR: Invalid portfolio\n")
+            print("ERROR: Invalid portfolio: selected ratios\n")
     #FIXME(oupa): not all checks done
     pf = buildnaifpf(tmpinfos, ratios) #[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
+    sum2 = 0
+    for a in pf:
+        sum2 += a['quantity'] * dictinfos[a['id']].quotation
+    postratios = []
+    for i in pf:
+        tmpratio = (i['quantity'] * dictinfos[i['id']].quotation) / sum2
+        postratios.append(tmpratio)
+        if tmpratio > 0.1 or tmpratio < 0.01:
+            print("ERROR: Invalid portfolio: postcalculattion ratios\n")
     set_portfolio(1835, pf)
     set_portfolio(1835, pf) #set twice sinon c truc de merde se met pas à jour
     ret = post_ratio([12], [1835])
@@ -121,8 +145,13 @@ def buildnaifpf(assets, assetsratios):
         diffint = qu - int(qu)
         if diffint != 0:
             print("WARNING: quantity is not an integer for id: " + str(assets[i].id) + ", adjusting...") 
-            missing += diffint * assets[i].quotation
-            qu = int(qu)
+            tmpqu = int(qu)
+            if tmpqu == 0:
+                missing -= (1 - diffint) * assets[i].quotation
+                qu = 1
+            else:
+                missing += diffint * assets[i].quotation
+                qu = tmpqu
         res.append(
             {
                 'id' : a.id,

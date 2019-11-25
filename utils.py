@@ -27,7 +27,7 @@ def getAssetInfos(assets):
         assetinfos = pickle.load(assetinfosfile)
         assetinfosfile.close()
     else:    
-        for i in copy_assets:
+        for i in assets:
             if i["ASSET_DATABASE_ID"]["value"] == "1835" or i["ASSET_DATABASE_ID"]["value"] == "2201" :
                 continue
             assetinfos.append(AssetInfo(int(i["ASSET_DATABASE_ID"]["value"])))
