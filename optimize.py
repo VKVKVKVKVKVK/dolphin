@@ -106,7 +106,6 @@ def testoptimizedpfgenerator(assets, infos):
     for i in range(len(ratios)):
         if ratios[i] > 0.1 or ratios[i] < 0.01:
             print("ERROR: Invalid portfolio: selected ratios\n")
-    #FIXME(oupa): not all checks done
     pf = buildnaifpf(tmpinfos, ratios) #[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6,0.1/6])
     sum2 = 0
     for a in pf:
@@ -118,9 +117,9 @@ def testoptimizedpfgenerator(assets, infos):
         if tmpratio > 0.1 or tmpratio < 0.01:
             print("ERROR: Invalid portfolio: postcalculattion ratios\n")
     set_portfolio(1835, pf)
-    set_portfolio(1835, pf) #set twice sinon c truc de merde se met pas à jour
+    set_portfolio(1835, pf) #set twice to force update
     ret = post_ratio([12], [1835])
-    print("our yolo sharpes: " + str(json.loads(ret.content.decode('utf-8'))))
+    print("our sharpes: " + str(json.loads(ret.content.decode('utf-8'))))
     #exit(0)
 
     #Build portfolio based on volume constraints
